@@ -4,7 +4,6 @@
 
 using namespace std;
 
-
 // helper to print vec
 template<typename T>
 ostream& operator<<(ostream& os, const vector<T>& vec)
@@ -22,15 +21,8 @@ ostream& operator<<(ostream& os, const vector<T>& vec)
     return os;
 }
 
-/**
-On each day, you may decide to buy and/or sell the stock.
-You can only hold at most one share of the stock at any time. However, you can buy it then immediately sell it on the same day.
-Find and return the maximum profit you can achieve.
-*/
-class Solution {
-private:
-        
     // i would use boost matrix or something but this is a toy problem
+    /*
     template<typename T>
     class Matrix
     {
@@ -68,11 +60,15 @@ private:
             {
                 m_pData[i][j] = value;
             }
-    };
+    };*/
 
-public:
+/*
+    On each day, you may decide to buy and/or sell the stock.
+    You can only hold at most one share of the stock at any time. However, you can buy it then immediately sell it on the same day.
+    Find and return the maximum profit you can achieve.
+*/
 
-    /*
+/*
     Dynamic programming with O(n^2) space, O(n) time
     keep track of p[x,y]
     where x = current day,
@@ -94,33 +90,31 @@ public:
     maxProfit(1) = MAX(p[2,0], p[2,1], p[2,2])
 
     and so on...
+*/
 
-    */
-
-   
+class Solution {
+public:
     int maxProfit(vector<int>& prices) const
     {
         const size_t n = prices.size();
-        
-        Matrix<int> p(n); // reserves NxN heap
-        p.set(0,0,0);
 
-        vector<int> maxProfit;
-        maxProfit.reserve(n);
+        // traditionally it's a matrix but in this case we only need a column
+        std::vector<int> p(n);
+
+        vector<int> maxProfit(n);
         maxProfit[0] = 0;
 
         for(size_t x=1; x<n; ++x)
         {
             for(size_t y=0; y<x; ++y)
             {
-                int profit = (prices[x] - prices[y]) + maxProfit[y];
-                p.set(x,y, profit);
+                p[y] = (prices[x] - prices[y]) + maxProfit[y];
             }
 
             int max = maxProfit[x-1];
             for(size_t y=0; y<x; ++y)
             {
-                max = std::max(max, p.get(x,y));
+                max = std::max(max, p[y]);
             }
             maxProfit[x] = max;
         }
@@ -162,6 +156,46 @@ int main(int argc, char *argv[])
         Solution solution{};
         int actual = solution.maxProfit(prices);
         int expected = 6;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(expected == actual);
+    }
+    {
+        vector<int> prices{1,2945,9,243,0,23,122,8903,3234,392,733,2222,3332,4444,5555,6666,1111};
+        Solution solution{};
+        int actual = solution.maxProfit(prices);
+        int expected = 18355;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(expected == actual);
+    }
+    {
+        vector<int> prices{3,4,5};
+        Solution solution{};
+        int actual = solution.maxProfit(prices);
+        int expected = 2;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(expected == actual);
+    }
+        {
+        vector<int> prices{121,120,119};
+        Solution solution{};
+        int actual = solution.maxProfit(prices);
+        int expected = 0;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(expected == actual);
+    }
+    {
+        vector<int> prices{100000};
+        Solution solution{};
+        int actual = solution.maxProfit(prices);
+        int expected = 0;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(expected == actual);
+    }
+    {
+        vector<int> prices{43,23,46,23,40,30,30,57,23};
+        Solution solution{};
+        int actual = solution.maxProfit(prices);
+        int expected = 67;
         std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
         assert(expected == actual);
     }
