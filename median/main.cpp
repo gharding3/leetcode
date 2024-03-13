@@ -43,10 +43,7 @@ using namespace std;
 //  since the true median is somewhere beteen (m2, m1)
 
 
-class Solution {
-private:
-
-    // TODO: Use std::span with C++20
+// TODO: Use std::span with C++20
     template<typename T>
     class VectorSpan
     {
@@ -84,6 +81,26 @@ private:
         }
     };
 
+// helper to print vec
+template<typename T>
+ostream& operator<<(ostream& os, const VectorSpan<T>& vec)
+{
+    bool first = true;
+    std::cout << "[";
+    for(auto it = vec.begin(); it < vec.end(); ++it)
+    {
+        if(!first)
+            std::cout << ",";
+        std::cout << *it;
+        first = false;
+    }
+    std::cout << "]";
+    return os;
+}
+
+class Solution {
+private:
+
 public:
 
     double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) 
@@ -119,6 +136,7 @@ private:
         }
         int a = nums[sz/2 - 1];
         int b = nums[sz/2];
+        //std::cout << "base case: a=" << a << ", b=" << b << ", c=" << c << std::endl;
         if(sz % 2 == 0)
         {
             // combined size is odd
@@ -133,44 +151,78 @@ private:
             }
             else if(c > b)
             {
-                return (b + c) / 2.0;
+                int d = (sz > 2) ? nums[sz/2 + 1] : c;
+                return (c > d) ? (b + d) / 2.0 : (b + c) / 2.0;
             }
-            else
+            else // a <= c <= b
             {
-                return (a + c) / 2.0;
+                return (c + b) / 2.0;
             }
         }
+    }
+
+    bool fitsInside(const VectorSpan<int>& nums1, const VectorSpan<int>& nums2) const
+    {
+        const size_t size1 = nums1.size();
+        const size_t size2 = nums2.size();
+        if(size2 % 2 == 0)
+        {
+            int a = nums1[0];
+            int b = nums1[size1 - 1];
+            int c = nums2[size2/2 - 1];
+            int d = nums2[size2/2];
+            if(a >= c && b <= d)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     double findMedianSortedArraysRecursive(const VectorSpan<int>& nums1, const VectorSpan<int>& nums2) const
     {
         // ensure first collection is smaller
-        size_t size1 = nums1.size();
-        size_t size2 = nums2.size();
+        const size_t size1 = nums1.size();
+        const size_t size2 = nums2.size();
         if(size2 < size1)
         {
             return findMedianSortedArraysRecursive(nums2, nums1);
         }
-        
-        // base case
+
+        //std::cout << "nums1=" << nums1 << ", nums2=" << nums2 << std::endl;
+
+        // base cases
+        if(size1 == 0)
+        {
+            return findMedian(nums2);
+        }
         if(size1 == 1)
         {
             return findMedian(nums2, nums1[0]);
         }
 
+        // detect case where nums1 fits neatly inside nums2, or vice-versa
+        if(fitsInside(nums1, nums2))
+        {
+            return findMedian(nums1);
+        }
+        else if(fitsInside(nums2, nums1))
+        {
+            return findMedian(nums2);
+        }
+
         {
             // split both sides
-            int m1 = findMedian(nums1);
-            int m2 = findMedian(nums2);
-            if(m1 == m2)
-            {
-                return m1;
-            }
-            else if(m1 < m2)
+            double m1 = findMedian(nums1);
+            double m2 = findMedian(nums2);
+            //std::cout << "m1 = " << m1 << ", m2 = " << m2 << std::endl;
+
+            int removed = (size1 > 2 && size1 %2 == 0) ? size1/2 - 1 : size1/2;
+
+            if(m1 <= m2)
             {
                 // search [j..N][0..k]
-                int j = (size1 % 2 == 0) ? size1/2 : size1/2 + 1;
-                int removed = j;
+                int j = removed;
                 int k = size2 - removed;
 
                 VectorSpan<int> numParts1(nums1.begin() + j, nums1.end());
@@ -180,8 +232,7 @@ private:
             else // m1 > m2
             {
                 // search [l..M][0..i]
-                int i = (size1 %2 == 0) ? size1/2 : size1/2 + 1;
-                int removed = (size1 - i);
+                int i = (size1 - removed);
                 int l = removed;
 
                 VectorSpan<int> numParts1(nums2.begin() + l, nums2.end());
@@ -194,6 +245,96 @@ private:
 
 int main(int argc, char *argv[])
 {
+    {
+        std::vector<int> nums1{1,2,6,7};
+        std::vector<int> nums2{3,4,5,8};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 4.5;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
+    {
+        std::vector<int> nums1{1,5};
+        std::vector<int> nums2{2,3,4,6};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 3.5;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
+    {
+        std::vector<int> nums1{4};
+        std::vector<int> nums2{1,2,3};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 2.5;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
+    {
+        std::vector<int> nums1{};
+        std::vector<int> nums2{1};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 1;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
+    {
+        std::vector<int> nums1{2,4};
+        std::vector<int> nums2{1,5};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 3;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
+    {
+        std::vector<int> nums1{12,13,27,30};
+        std::vector<int> nums2{16,18};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 17;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
+    {
+        std::vector<int> nums1{5,10,15,20,25,30,50,75,100};
+        std::vector<int> nums2{9,13,19,23,24,33,39,55,77,88,99};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 27.5;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
+    {
+        std::vector<int> nums1{5,10,15,20,25,30,35,50,75,100,101};
+        std::vector<int> nums2{9,13,19,23,24,33,39,55,77,88,99};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 31.5;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
+    {
+        std::vector<int> nums1{9,13,19,23,24,33,39,55,77,88,99};
+        std::vector<int> nums2{5,10,15,20,25,30,35,50,75,100,101};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 31.5;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
+    {
+        std::vector<int> nums1{40,41,42,43,44,45,46,47,48,49,50};
+        std::vector<int> nums2{45};
+        Solution solution{};
+        double actual = solution.findMedianSortedArrays(nums1, nums2);
+        double expected = 45;
+        std::cout << "expected: " << expected << ", actual: " << actual << std::endl;
+        assert(actual == expected);
+    }
     {
         std::vector<int> nums1{0};
         std::vector<int> nums2{1,5};
