@@ -21,47 +21,6 @@ ostream& operator<<(ostream& os, const vector<T>& vec)
     return os;
 }
 
-    // i would use boost matrix or something but this is a toy problem
-    /*
-    template<typename T>
-    class Matrix
-    {
-        private:
-            T** m_pData;
-            size_t m_N;
-            size_t m_M;
-        public:
-            Matrix(const size_t n, const size_t m)
-                : m_N(n)
-                , m_M(m)
-            {
-                m_pData = new T*[n];
-                for(int i=0; i<n; ++i)
-                    m_pData[i] = new T[m];
-            }
-            Matrix(const size_t n)
-                :Matrix(n,n)
-            {
-            }
-
-            ~Matrix()
-            {
-                for(int i=0; i<m_N; ++i)
-                    delete[] m_pData[i]; 
-                delete[] m_pData;
-            }
-
-            // computers are good at copying, right? let's ignore move/reference semantics
-            T get(size_t i, size_t j) const
-            {
-                return m_pData[i][j];
-            }
-            void set(size_t i, size_t j, T value)
-            {
-                m_pData[i][j] = value;
-            }
-    };*/
-
 /*
     On each day, you may decide to buy and/or sell the stock.
     You can only hold at most one share of the stock at any time. However, you can buy it then immediately sell it on the same day.
@@ -98,25 +57,26 @@ public:
     {
         const size_t n = prices.size();
 
-        // traditionally it's a matrix but in this case we only need a column
-        std::vector<int> p(n);
+        int profitIfWeSellToday = 0;
+        int maxProfitToday = 0;
 
         vector<int> maxProfit(n);
         maxProfit[0] = 0;
 
         for(size_t x=1; x<n; ++x)
         {
+            maxProfitToday = maxProfit[x-1];
+
             for(size_t y=0; y<x; ++y)
             {
-                p[y] = (prices[x] - prices[y]) + maxProfit[y];
+                profitIfWeSellToday = (prices[x] - prices[y]) + maxProfit[y];
+                if(profitIfWeSellToday > maxProfitToday)
+                {
+                    maxProfitToday = profitIfWeSellToday;
+                }
             }
 
-            int max = maxProfit[x-1];
-            for(size_t y=0; y<x; ++y)
-            {
-                max = std::max(max, p[y]);
-            }
-            maxProfit[x] = max;
+            maxProfit[x] = maxProfitToday;
         }
 
         return maxProfit[n-1];
